@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel TV | ADpaz</title>
+<link rel="manifest" href="manifest.json">
+
+<meta name="theme-color" content="#6b8e23">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="logo.icon.png">
+
+<script>
+  if ('service-worker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(() => console.log('SW registrado!'))
+      .catch(err => console.log('Erro no SW:', err));
+  }
+
+  // Lógica para sugerir a instalação (Botão flutuante opcional)
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Aqui você poderia mostrar um botão "Instalar App"
+    console.log('O app pode ser instalado!');
+  });
+</script>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+:root {
+    --primary: #6b8e23;
+    --bg: #050505;
+    --white: #ffffff;
+}
+
+body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Segoe UI', sans-serif;
+    overflow: hidden;
+    cursor: none;
+}
+
+.bg-gradient {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, #111, #000);
+    z-index: -3;
+}
+
+.slide-bg {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    z-index: -2;
+    opacity: 0;
+    transition: opacity 1s ease;
+}
+
+.slide-bg.ativo {
+    opacity: 1;
+}
+
+.container-custom {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.glass {
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    border-radius: 25px;
+    padding: 40px;
+    text-align: center;
+    width: 100%;
+}
+
+.welcome-label {
+    font-size: clamp(1.5rem, 3vw, 3rem);
+    font-style: italic;
+}
+
+#nome-visitante {
+    font-size: clamp(2.5rem, 9vw, 7rem);
+    font-weight: 800;
+    color: var(--primary);
+    text-transform: uppercase;
+    opacity: 0;
+}
+
+.nome-animado {
+    animation: entrarNome 1s ease forwards;
+}
+
+@keyframes entrarNome {
+    0% { transform: scale(0.6) translateY(40px); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+#mensagem-exibida {
+    font-size: clamp(1.2rem, 2.5vw, 2rem);
+    color: #ddd;
+}
+
+.linha-divisora {
+    width: 60%;
+    height: 3px;
+    background: linear-gradient(to right, transparent, var(--primary), transparent);
+    margin: 30px auto;
+}
+
+.footer {
+    font-size: clamp(1rem, 2vw, 2rem);
+    opacity: 0.7;
+}
+
+.fade { opacity: 0; transition: 0.5s; }
+</style>
+</head>
+
+<body>
+
+<div class="bg-gradient"></div>
+<div id="slide-bg" class="slide-bg"></div>
+
+<div class="container container-custom" id="painel-conteudo">
+    <div class="glass">
+        <div class="welcome-label" id="welcome-text">Seja Bem-vindo</div>
+        <h1 id="nome-visitante">Carregando...</h1>
+        <div id="mensagem-exibida"></div>
+        <div class="linha-divisora"></div>
+        <div class="footer">ADpaz Cidade Praia • 12 Anos</div>
+    </div>
+</div>
+
+<audio id="som" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8b1c9c8a2.mp3"></audio>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbz9qIXvvmi8esduwCVv9G3Ku3mgHohdJSOYY8KLYonpjkBWj76mT6nac_awa5ax-HWh/exec';
+
+const listaMensagens = [
+    "Ficamos muito felizes com sua presença!",
+"Deus tem uma palavra especial ao teu coração!",
+"Hoje sua presença alegra esta casa!",
+"Obrigado por estar conosco neste dia especial!",
+"Venha celebrar a vida conosco!",
+"Sua presença é um presente para nós!",
+"Que Deus abençoe grandemente sua vida hoje!",
+"É uma alegria ter você aqui conosco!",
+"Que este momento marque seu coração!",
+"Deus preparou algo especial para você hoje!",
+"Sinta-se acolhido em nossa casa!",
+"Você é muito bem-vindo entre nós!",
+"Hoje é dia de viver algo novo de Deus!",
+"Que sua vida seja tocada pelo amor de Deus!",
+"Estamos felizes por compartilhar este momento com você!"
+];
+
+/* SOMENTE IMAGENS */
+const slides = [
+"https://images.unsplash.com/photo-1504052434569-70ad5836ab65",
+"https://images.unsplash.com/photo-1507692049790-de58290a4334",
+"https://plus.unsplash.com/premium_photo-1723759212099-d33000267d6f?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+"https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=1173&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+"https://plus.unsplash.com/premium_photo-1663127492170-f8c83daebecf?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+"https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=1173&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+"https://images.unsplash.com/photo-1509021436665-8f07dbf5bf1d?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+"https://plus.unsplash.com/premium_photo-1681825190709-63df23dd6170?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+"https://images.unsplash.com/photo-1529070538774-1843cb3265df?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+"https://images.unsplash.com/photo-1543702404-38c2035462ad?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+];
+
+let ultimoNome = "";
+let ultimoTempo = Date.now();
+let modoSlide = false;
+let slideIndex = 0;
+
+function identificarSaudacao(nome) {
+    if (!nome || nome === "Carregando...") return "Seja Bem-vindo";
+    const primeiro = nome.split(' ')[0].toLowerCase();
+    return primeiro.endsWith('a') ? "Seja Bem-vinda" : "Seja Bem-vindo";
+}
+
+function iniciarSlides() {
+    modoSlide = true;
+
+    const bg = document.getElementById('slide-bg');
+    const elNome = document.getElementById('nome-visitante');
+    const elMsg = document.getElementById('mensagem-exibida');
+    const elWelcome = document.getElementById('welcome-text');
+
+    // limpa texto
+    elNome.innerText = "";
+    elMsg.innerText = "";
+    elWelcome.innerText = "";
+
+    function rodar() {
+        if (!modoSlide) return;
+
+        bg.style.backgroundImage = `url(${slides[slideIndex]})`;
+        bg.classList.add("ativo");
+
+        slideIndex = (slideIndex + 1) % slides.length;
+
+        setTimeout(rodar, 5000);
+    }
+
+    rodar();
+}
+
+async function atualizar() {
+    try {
+        const res = await fetch(`${API_URL}?t=${Date.now()}`);
+        const data = await res.json();
+
+        const container = document.getElementById('painel-conteudo');
+        const elNome = document.getElementById('nome-visitante');
+        const elMsg = document.getElementById('mensagem-exibida');
+        const elWelcome = document.getElementById('welcome-text');
+        const som = document.getElementById('som');
+        const bg = document.getElementById('slide-bg');
+
+        if (data.nome && data.nome !== ultimoNome) {
+            ultimoNome = data.nome;
+            modoSlide = false;
+            ultimoTempo = Date.now();
+
+            bg.classList.remove("ativo");
+
+            container.classList.add('fade');
+
+            setTimeout(() => {
+                elWelcome.innerText = identificarSaudacao(data.nome);
+                elNome.innerText = data.nome;
+                elNome.classList.add('nome-animado');
+
+                elMsg.innerText = listaMensagens[Math.floor(Math.random()*listaMensagens.length)];
+
+                som.play().catch(()=>{});
+
+                container.classList.remove('fade');
+            }, 500);
+        }
+
+    } catch(e) {
+        console.error("Erro");
+    }
+}
+
+setInterval(atualizar, 5000);
+atualizar();
+
+setInterval(()=>{
+    if (!modoSlide && (Date.now() - ultimoTempo > 20000)) {
+        iniciarSlides();
+    }
+},3000);
+
+document.body.addEventListener("click", ()=>{
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    }
+});
+</script>
+
+</body>
+</html>
